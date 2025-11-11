@@ -7,24 +7,87 @@ const quotes = [
     "Your future is created by what you do today, not tomorrow. - Robert Kiyosaki"
 ];
 
-function updateBlockedInfo() {
-    // Get the URL that was blocked from the referrer or current tab
-    let blockedUrl = document.referrer || 'Unknown website';
-    
-    // Clean up the URL for display
-    if (blockedUrl && blockedUrl !== 'Unknown website') {
-        try {
-            const url = new URL(blockedUrl);
-            blockedUrl = url.hostname.replace('www.', '');
-        } catch (e) {
-            blockedUrl = 'Blocked website';
+async function getBlockedUrlFromStorage() {
+    try {
+        if (typeof chrome !== 'undefined' && chrome.storage) {
+            const data = await chrome.storage.local.get(['lastBlockedUrl']);
+            if (data.lastBlockedUrl) {
+                try {
+                    const url = new URL(data.lastBlockedUrl);
+                    return url.hostname.replace('www.', '');
+                } catch (e) {
+                    // Try to extract domain from URL string
+                    const match = data.lastBlockedUrl.match(/(?:https?:\/\/)?(?:www\.)?([^\/]+)/);
+                    if (match && match[1]) {
+                        return match[1].replace('www.', '');
+                    }
+                }
+            }
         }
+    } catch (e) {
+        // Silently fail
+    }
+    return null;
+}
+
+async function updateBlockedInfo() {
+    let blockedUrl = 'Blocked website';
+    
+    // First, try to get from chrome.storage.local (stored by content script)
+    const storedUrl = await getBlockedUrlFromStorage();
+    if (storedUrl) {
+        blockedUrl = storedUrl;
     } else {
+        // Try to get the blocked URL from referrer
+        const referrer = document.referrer;
+        
+        // Check if referrer is valid and not an extension URL
+        if (referrer && !referrer.startsWith('chrome-extension://') && !referrer.startsWith('chrome://')) {
+            try {
+                const url = new URL(referrer);
+                blockedUrl = url.hostname.replace('www.', '');
+            } catch (e) {
+                // If URL parsing fails, try to extract domain from referrer string
+                const match = referrer.match(/(?:https?:\/\/)?(?:www\.)?([^\/]+)/);
+                if (match && match[1]) {
+                    blockedUrl = match[1].replace('www.', '');
+                }
+            }
+        } else {
+            // If referrer is not available or is extension URL, try to get from storage
+            try {
+                if (typeof chrome !== 'undefined' && chrome.storage) {
+                    const data = await chrome.storage.sync.get(['websites']);
+                    if (data.websites && data.websites.length > 0) {
+                        // Show the first blocked website or a generic message
+                        blockedUrl = data.websites.length === 1 
+                            ? data.websites[0].url 
+                            : `${data.websites.length} websites blocked`;
+                    }
+                }
+            } catch (e) {
+                // Fallback to generic message
+                blockedUrl = 'Blocked website';
+            }
+        }
+    }
+    
+    // Ensure we have a valid display value
+    if (!blockedUrl || blockedUrl.trim() === '') {
         blockedUrl = 'Blocked website';
     }
     
-    document.getElementById('blockedUrl').textContent = blockedUrl;
-    document.getElementById('quote').textContent = quotes[Math.floor(Math.random() * quotes.length)];
+    // Update DOM elements safely
+    const blockedUrlElement = document.getElementById('blockedUrl');
+    const quoteElement = document.getElementById('quote');
+    
+    if (blockedUrlElement) {
+        blockedUrlElement.textContent = blockedUrl;
+    }
+    
+    if (quoteElement) {
+        quoteElement.textContent = quotes[Math.floor(Math.random() * quotes.length)];
+    }
     
     // Update time info
     updateTimeInfo();
@@ -96,16 +159,6 @@ function openSettings() {
     }
 }
 
-function goBack() {
-    // Navigate to new tab page
-    try {
-        chrome.runtime.sendMessage({ action: 'goToNewTab' });
-    } catch (error) {
-        // Fallback: go to new tab page
-        window.location.href = 'chrome://newtab/';
-    }
-}
-
 function newTab() {
     // Send message to background script to create new tab
     try {
@@ -119,7 +172,6 @@ function newTab() {
 // Add event listeners after DOM is loaded
 function initializeButtons() {
     document.getElementById('settingsBtn').addEventListener('click', openSettings);
-    document.getElementById('goBackBtn').addEventListener('click', goBack);
     document.getElementById('newTabBtn').addEventListener('click', newTab);
 }
 

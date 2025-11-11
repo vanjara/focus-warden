@@ -17,9 +17,6 @@ class FocusGuardBackground {
             } else if (message.action === 'openExtensionPage') {
                 // Open the extensions page
                 chrome.tabs.create({ url: 'chrome://extensions/' });
-            } else if (message.action === 'goToNewTab') {
-                // Navigate current tab to new tab page
-                chrome.tabs.update(sender.tab.id, { url: 'chrome://newtab/' });
             } else if (message.action === 'createNewTab') {
                 // Create a new tab
                 chrome.tabs.create({ url: 'chrome://newtab/' });
@@ -62,24 +59,38 @@ class FocusGuardBackground {
             
             if (!data.enabled) {
                 // Remove all blocking rules
-                await chrome.declarativeNetRequest.updateDynamicRules({
-                    removeRuleIds: await this.getAllRuleIds()
-                });
+                await this.removeAllRules();
                 return;
             }
 
             // If no websites are configured, don't block anything
             if (!data.websites || data.websites.length === 0) {
-                await chrome.declarativeNetRequest.updateDynamicRules({
-                    removeRuleIds: await this.getAllRuleIds()
-                });
+                await this.removeAllRules();
                 return;
             }
 
             const shouldBlock = await this.shouldBlockNow(data);
             
+            // Get extension ID to create exception rule
+            const extensionId = chrome.runtime.id;
+            
+            // Always add exception rule to never block extension's own pages
+            // This must have higher priority and be present always
+            const exceptionRule = {
+                id: 9999,
+                priority: 1000, // Much higher priority than blocking rules
+                action: {
+                    type: 'allow'
+                },
+                condition: {
+                    urlFilter: `chrome-extension://${extensionId}/*`,
+                    resourceTypes: ['main_frame']
+                }
+            };
+
             if (shouldBlock) {
-                // Create blocking rules
+                // Create blocking rules - only for http/https URLs
+                // The urlFilter pattern *:// only matches http and https, not chrome-extension://
                 const rules = data.websites.map((website, index) => ({
                     id: index + 1,
                     priority: 1,
@@ -90,21 +101,36 @@ class FocusGuardBackground {
                         }
                     },
                     condition: {
+                        // Only match http and https (not chrome-extension://)
                         urlFilter: `*://*.${website.url}/*`,
                         resourceTypes: ['main_frame']
                     }
                 }));
 
-                // Update rules
+                // Update rules - include exception rule to protect extension pages
                 await chrome.declarativeNetRequest.updateDynamicRules({
                     removeRuleIds: await this.getAllRuleIds(),
-                    addRules: rules
+                    addRules: [...rules, exceptionRule]
                 });
             } else {
-                // Remove all blocking rules
-                await chrome.declarativeNetRequest.updateDynamicRules({
-                    removeRuleIds: await this.getAllRuleIds()
-                });
+                // Remove blocking rules but keep exception rule
+                const currentRuleIds = await this.getAllRuleIds();
+                const blockingRuleIds = currentRuleIds.filter(id => id !== 9999);
+                
+                if (blockingRuleIds.length > 0) {
+                    await chrome.declarativeNetRequest.updateDynamicRules({
+                        removeRuleIds: blockingRuleIds
+                    });
+                }
+                
+                // Ensure exception rule exists
+                const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
+                const hasExceptionRule = existingRules.some(rule => rule.id === 9999);
+                if (!hasExceptionRule) {
+                    await chrome.declarativeNetRequest.updateDynamicRules({
+                        addRules: [exceptionRule]
+                    });
+                }
             }
         } catch (error) {
             console.error('Error updating rules:', error);
@@ -158,6 +184,15 @@ class FocusGuardBackground {
     async getAllRuleIds() {
         const rules = await chrome.declarativeNetRequest.getDynamicRules();
         return rules.map(rule => rule.id);
+    }
+
+    async removeAllRules() {
+        const ruleIds = await this.getAllRuleIds();
+        if (ruleIds.length > 0) {
+            await chrome.declarativeNetRequest.updateDynamicRules({
+                removeRuleIds: ruleIds
+            });
+        }
     }
 }
 

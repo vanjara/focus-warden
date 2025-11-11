@@ -32,9 +32,19 @@
         }
 
         .blocked-icon {
-            font-size: 80px;
-            margin-bottom: 20px;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px auto;
             animation: pulse 2s infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .blocked-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
         @keyframes pulse {
@@ -137,7 +147,9 @@
 </head>
 <body>
     <div class="blocked-container">
-        <div class="blocked-icon">🛡️</div>
+        <div class="blocked-icon">
+            <img src="icon-128.png" alt="FocusWarden Logo">
+        </div>
         
         <h1 class="blocked-title">Site Blocked</h1>
         
@@ -153,9 +165,6 @@
         <div class="blocked-actions">
             <button class="action-btn primary" id="settingsBtn">
                 Settings
-            </button>
-            <button class="action-btn" id="goBackBtn">
-                Go Back
             </button>
             <button class="action-btn" id="newTabBtn">
                 New Tab
