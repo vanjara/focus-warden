@@ -29,6 +29,18 @@ _metadata/
 *.crx
 *.pem
 
+# Extracted release folders (use zip for distribution)
+FocusWarden-v*/
+
+# Screenshots and promo images (not needed in repo)
+screenshot*.png
+Screenshot*.png
+focus-warden-*.png
+promo-*.png
+
+# Backup folders
+icon-backup/
+
 # Build and development files
 .bolt/
 build/

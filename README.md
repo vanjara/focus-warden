@@ -1,8 +1,16 @@
-# FocusWarden - Website Blocker Extension 🚀
+# FocusWarden - Website Blocker Extension 🛡️
 
 A Chrome browser extension that helps users block distracting websites during focused work sessions with customizable time schedules.
 
-*Rebranded to FocusWarden - Version 1.0.0*
+**Current Version: 1.0.1**
+
+## What's New in v1.0.1
+
+- **Bug Fix**: Blocked page now correctly displays the website name instead of extension ID
+- **Bug Fix**: Added exception rule to prevent the blocked page itself from being blocked
+- **New**: Updated FocusWarden logo and branding
+- **Improved**: Cleaner, simpler blocked page UI (removed Go Back button)
+- **Added**: Automated E2E testing with Puppeteer
 
 ## Features
 
@@ -61,6 +69,8 @@ focus-warden/
 
 - `npm run dev` - Start Vite dev server for React frontend
 - `npm run build` - Build production extension
+- `npm run test` - Run unit tests
+- `npm run test:e2e` - Run E2E extension tests (opens Chrome)
 - `npm run lint` - Run ESLint
 - `npm run preview` - Preview production build
 
@@ -89,9 +99,7 @@ The `src/` folder contains a React + TypeScript application that can be used for
 
 - `storage` - Save user preferences
 - `declarativeNetRequest` - Block websites efficiently
-- `tabs` - Manage browser tabs
 - `alarms` - Schedule blocking periods
-- `activeTab` - Access current tab information
 
 ## Building for Distribution
 
