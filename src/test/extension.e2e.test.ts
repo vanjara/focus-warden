@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import puppeteer, { Browser, Page } from 'puppeteer'
+import puppeteer, { Browser } from 'puppeteer'
 import path from 'path'
 
 const EXTENSION_PATH = path.resolve(__dirname, '../../FocusWarden-v1.0.1')
@@ -99,10 +99,11 @@ describe('FocusWarden Extension E2E Tests', () => {
     const title = await page.title()
     expect(title).toBeDefined()
     
-    // Check for main elements
+    // Check for main elements (toggle/checkbox)
     const toggleExists = await page.$('#enabled') !== null || 
                          await page.$('.toggle') !== null ||
                          await page.$('input[type="checkbox"]') !== null
+    expect(toggleExists).toBe(true)
     
     await page.close()
   }, 10000)
@@ -259,6 +260,8 @@ describe('FocusWarden Extension E2E Tests', () => {
     
     // At least one navigation option should exist
     expect(buttons.length).toBeGreaterThan(0)
+    // Verify expected buttons exist
+    expect(hasNewTab || hasSettings).toBe(true)
     
     await page.close()
   }, 10000)
