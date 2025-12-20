@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "FocusWarden - Website Blocker",
-  "version": "1.0.1",
-  "description": "Block distracting websites during focused work sessions with customizable time schedules.",
+  "version": "1.0.2",
+  "description": "Block distracting websites during focused work sessions. Privacy-first: zero data collection, all processing local.",
   "permissions": [
     "storage",
     "declarativeNetRequest",
@@ -25,17 +25,17 @@
     "default_popup": "popup.html",
     "default_title": "FocusWarden",
     "default_icon": {
-      "16": "icon-16.png",
-      "32": "icon-32.png",
-      "48": "icon-48.png",
-      "128": "icon-128.png"
+      "16": "icon-16.svg",
+      "32": "icon-32.svg",
+      "48": "icon-48.svg",
+      "128": "icon-128.svg"
     }
   },
   "icons": {
-    "16": "icon-16.png",
-    "32": "icon-32.png",
-    "48": "icon-48.png",
-    "128": "icon-128.png"
+    "16": "icon-16.svg",
+    "32": "icon-32.svg",
+    "48": "icon-48.svg",
+    "128": "icon-128.svg"
   },
   "declarative_net_request": {
     "rule_resources": [
